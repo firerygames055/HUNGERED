@@ -14,14 +14,14 @@ local entity = spawner.Create({
 	},
 	Lights = {
 		Flicker = {
-			Enabled = true,
-			Duration = 5
+			Enabled = false,
+			Duration = 1
 		},
 		Shatter = true,
 		Repair = false
 	},
 	Earthquake = {
-		Enabled = true
+		Enabled = false
 	},
 	CameraShake = {
 		Enabled = true,
@@ -53,8 +53,8 @@ local entity = spawner.Create({
 	},
 	Death = {
 		Type = "Curious"
-		Hints = {"Oh wow you found this place?", "I'm surpised", "anyway lets see who you died to", "This one wants to eat you", "So maybe you could call it hungered", "You can do this!"},
-		Cause = "HUNGERED"
+		Hints = {"Ohh. I'm suprised you found this place", "Let's see who you died to", "This ones mouth is always open", "So maybe you could call it hungered"},
+		Cause = "hungered"
 	}
 })
 
@@ -360,8 +360,8 @@ entity:SetCallback("OnDamagePlayer", function(newHealth)
 		local killSound = Instance.new("Sound")
 		killSound.Parent = workspace
 		killSound.PlaybackSpeed = 1
-		killSound.SoundId = "rbxassetid://8315677038"
-		killSound.Name = "Him death sound chat"
+		killSound.SoundId = "rbxassetid://18459521002"
+		killSound.Name = "Dear god death sound chat"
 		killSound.Volume = 10
 		killSound.Looped = true
 
