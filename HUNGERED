@@ -1,0 +1,507 @@
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+
+---====== Load spawner ======---
+
+local spawner = loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Doors/Entity%20Spawner/V2/Source.lua"))()
+
+---====== Create entity ======---
+
+local entity = spawner.Create({
+	Entity = {
+		Name = "HUNGERED",
+		Asset = "https://github.com/eoyoustme/back/blob/main/HUNGERED.rbxm?raw=true",
+		HeightOffset = 1
+	},
+	Lights = {
+		Flicker = {
+			Enabled = true,
+			Duration = 5
+		},
+		Shatter = true,
+		Repair = false
+	},
+	Earthquake = {
+		Enabled = true
+	},
+	CameraShake = {
+		Enabled = true,
+		Range = 100,
+		Values = {1.5, 20, 0.1, 1} -- Magnitude, Roughness, FadeIn, FadeOut
+	},
+	Movement = {
+		Speed = 300,
+		Delay = 13,
+		Reversed = false
+	},
+	Rebounding = {
+		Enabled = true,
+		Type = "Ambush", -- "Blitz"
+		Min = 5,
+		Max = 5,
+		Delay = 0
+	},
+	Damage = {
+		Enabled = true,
+		Range = 40,
+		Amount = 125
+	},
+	Crucifixion = {
+		Enabled = true,
+		Range = 40,
+		Resist = false,
+		Break = true
+	},
+	Death = {
+		Type = "Curious"
+		Hints = {"Oh wow you found this place?", "I'm surpised", "anyway lets see who you died to", "This one wants to eat you", "So maybe you could call it hungered", "You can do this!"},
+		Cause = "HUNGERED"
+	}
+})
+
+---====== Debug entity ======---
+
+entity:SetCallback("OnSpawned", function()
+	print("Entity has spawned")
+
+	local TweenService = game:GetService("TweenService")
+	local Lighting = game.Lighting
+	local cc = Lighting:WaitForChild("MainColorCorrection")
+	local CameraShaker = require(game.ReplicatedStorage.CameraShaker)
+	local cam = workspace.CurrentCamera
+
+	-- Tạo CameraShaker
+	local camShake = CameraShaker.new(Enum.RenderPriority.Camera.Value, function(cf)
+		cam.CFrame = cam.CFrame * cf
+	end)
+	camShake:Start()
+
+	-- Âm thanh
+	local cue = Instance.new("Sound")
+	cue.Parent = workspace
+	cue.SoundId = "rbxassetid://9125712561"
+	cue.Volume = 10
+	cue.PlaybackSpeed = 0.25
+
+	-- 🔥 Load âm thanh trước
+	cue.Loaded:Wait()
+
+	-- ✅ Đặt TimePosition sau khi load xong
+	cue.TimePosition = 1
+
+	-- Phát cùng lúc lighting
+	cue:Play()
+
+	-- Lighting bắt đầu ngay
+	cc.TintColor = Color3.fromRGB(0, 0, 0)
+	cc.Contrast = 0.2
+	cc.Saturation = -0.7
+	TweenService:Create(cc, TweenInfo.new(10), {Contrast = 0}):Play()
+	TweenService:Create(cc, TweenInfo.new(10), {Saturation = 0}):Play()
+
+	-- Tăng dần PlaybackSpeed + đổi màu + camera shake
+	task.spawn(function()
+		-- 0.25
+		cc.TintColor = Color3.fromRGB(0, 0, 0)
+		camShake:ShakeOnce(5, 2, 1, 2, 1, 6)
+		task.wait(0.75)
+
+		-- 0.5
+		cue.PlaybackSpeed = 0.5
+		cc.TintColor = Color3.fromRGB(10, 10, 10)
+		camShake:ShakeOnce(6, 2, 4, 1, 4, 7)
+		task.wait(0.75)
+
+		-- 0.75
+		cue.PlaybackSpeed = 0.75
+		cc.TintColor = Color3.fromRGB(100, 100, 100)
+		camShake:ShakeOnce(10, 5, 2, 8, 1, 12)
+		task.wait(0.75)
+
+		-- 1.0
+		cue.PlaybackSpeed = 1
+		cc.TintColor = Color3.fromRGB(200, 200, 200)
+		camShake:ShakeOnce(12, 6, 3, 10, 2, 15)
+
+		-- Tween fade trắng 8 giây
+		TweenService:Create(cc, TweenInfo.new(15), {TintColor = Color3.fromRGB(255, 255, 255)}):Play()
+	end)
+	
+	for _, part in pairs(game.Workspace.CurrentRooms[game:GetService("ReplicatedStorage").GameData.LatestRoom.Value].Parts:GetDescendants()) do
+		if part:IsA("BasePart") then
+			local Smoke = Instance.new("Smoke")
+			Smoke.TimeScale = 1
+			Smoke.Color = Color3.new(0, 0, 0) -- White
+			Smoke.Size = math.max(5, 5) -- Pick the larger of the two dimensions
+			Smoke.Parent = part
+		end
+	end
+	
+	local player = game.Players.LocalPlayer
+	local cam = workspace.CurrentCamera
+
+	-- Tìm Model và Part
+	local model = workspace:WaitForChild("HUNGERED")
+	local smiler = model:WaitForChild("RushNew")
+
+	-- Xóa sound mặc định PlaySound nếu có
+	local SOund = smiler:FindFirstChild("ambience")
+	if SOund then
+		SOund:Destroy()
+	end
+
+	-- Thu thập âm thanh riêng của SmilerNew (ngoại lệ)
+	local smilerSounds = {}
+	for _, d in ipairs(smiler:GetDescendants()) do
+		if d:IsA("Sound") then
+			table.insert(smilerSounds, d)
+		end
+	end
+
+	-- Lưu lại speed ORIGINAL của mọi âm thanh trong map (chỉ lưu 1 lần)
+	local originalSpeed = {}
+
+	local function cacheOriginalSpeeds()
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("Sound") then
+				if not originalSpeed[obj] then
+					originalSpeed[obj] = obj.PlaybackSpeed
+				end
+			end
+		end
+	end
+
+	cacheOriginalSpeeds()
+
+	-- Lighting Effects
+	local Lighting = game:GetService("Lighting")
+
+	local cc = Instance.new("ColorCorrectionEffect", Lighting)
+	cc.Enabled = false
+	cc.Contrast = 0
+	cc.Saturation = 0
+
+	local blur = Instance.new("BlurEffect", Lighting)
+	blur.Size = 0
+	blur.Enabled = false
+
+
+	-- GUI Nhiễu
+	local gui = Instance.new("ScreenGui", player.PlayerGui)
+	gui.IgnoreGuiInset = true
+
+	local noise = Instance.new("ImageLabel", gui)
+	noise.Size = UDim2.new(1, 0, 1, 0)
+	noise.Position = UDim2.new(0, 0, 0, 0)
+	noise.BackgroundTransparency = 1
+	noise.ImageTransparency = 1
+
+	local img1 = "rbxassetid://0"
+	local img2 = "rbxassetid://0"
+
+	-- Loop chuyển đổi ảnh 0.05s
+	task.spawn(function()
+		while true do
+			noise.Image = img1
+			task.wait(0.005)
+			noise.Image = img2
+			task.wait(0.005)
+		end
+	end)
+
+
+	-- Kiểm tra sound có thuộc Smiler khôn
+
+
+	-- Disable toàn bộ hiệu ứng
+	local function disableEffect()
+		cc.Enabled = false
+		cc.Contrast = 0
+
+		blur.Enabled = false
+		blur.Size = 0
+
+		noise.ImageTransparency = 1
+
+	end
+
+
+	-- Update hiệu ứng theo khoảng cách
+	local function updateEffect(distance)
+		if distance > 100 then
+			disableEffect()
+			return
+		end
+
+		cc.Enabled = true
+		blur.Enabled = true
+
+		local alpha = math.clamp(1 - (distance / 100), 0, 1)
+		noise.ImageTransparency = 1 - alpha
+
+
+		if distance <= 50 then
+			cc.Contrast = 0
+			blur.Size = 0
+		elseif distance <= 60 then
+			cc.Contrast = 0
+			blur.Size = 0
+		elseif distance <= 80 then
+			cc.Contrast = 0
+			blur.Size = 0
+		else
+			cc.Contrast = 0
+			blur.Size = 0
+		end
+	end
+
+
+	-- Loop kiểm tra khoảng cách
+	game:GetService("RunService").RenderStepped:Connect(function()
+		local char = player.Character
+		if not char then return end
+
+		-- Nếu trốn → tắt hoàn toàn
+		if char:GetAttribute("Hiding") == true then
+			disableEffect()
+			return
+		end
+
+		local root = char:FindFirstChild("HumanoidRootPart")
+		if not root then return end
+
+		local distance = (root.Position - smiler.Position).Magnitude
+		updateEffect(distance)
+	end)
+
+end)
+
+entity:SetCallback("OnStartMoving", function()
+	print("Entity has started moving")
+end)
+
+entity:SetCallback("OnEnterRoom", function(room, firstTime)
+	if firstTime == true then
+		print("Entity has entered room: ".. room.Name.. " for the first time")
+	else
+		print("Entity has entered room: ".. room.Name.. " again")
+	end
+end)
+
+entity:SetCallback("OnLookAt", function(lineOfSight)
+	if lineOfSight == true then
+		print("Player is looking at entity")
+	else
+		print("Player view is obstructed by something")
+	end
+end)
+
+entity:SetCallback("OnRebounding", function(startOfRebound)
+	if startOfRebound == true then
+		print("Entity has started rebounding")
+	else
+		print("Entity has finished rebounding")
+	end
+end)
+
+entity:SetCallback("OnDespawning", function()
+	print("Entity is despawning")
+end)
+
+entity:SetCallback("OnDespawned", function()
+	print("Entity has despawned")
+	local TweenService = game:GetService("TweenService")
+
+	-- Tạo âm thanh
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://9125712561"
+	sound.Volume = 10
+	sound.PlaybackSpeed = 0.4
+	sound.Looped = false
+	sound.Parent = workspace
+
+	-- Load âm thanh trước
+	sound.Loaded:Wait()
+
+	-- Phát âm thanh ngay
+	sound:Play()
+
+	-- Chờ 2.5 giây trước khi bắt đầu fade
+	task.delay(2.5, function()
+		-- Tween giảm volume từ 10 xuống 0 trong 2 giây
+		local tween = TweenService:Create(sound, TweenInfo.new(5), {Volume = 0})
+		tween:Play()
+
+		-- Khi tween kết thúc → destroy âm thanh
+		tween.Completed:Connect(function()
+			sound:Destroy()
+		end)
+	end)
+
+end)
+
+entity:SetCallback("OnDamagePlayer", function(newHealth)
+	local player = game.Players.LocalPlayer
+	local playerGui = player:WaitForChild("PlayerGui")
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoid = character:WaitForChild("Humanoid")
+	local camera = workspace.CurrentCamera
+
+	-- Bắt đầu Jumpscare nếu player chết
+	if newHealth <= 0 then
+		local screenGui = Instance.new("ScreenGui")
+		screenGui.Parent = playerGui
+		screenGui.Name = "ScreenGui"
+		screenGui.IgnoreGuiInset = true
+
+		local stopEffects = false
+		local doneFading = false
+
+		-- Âm thanh jumpscare
+		local killSound = Instance.new("Sound")
+		killSound.Parent = workspace
+		killSound.PlaybackSpeed = 1
+		killSound.SoundId = "rbxassetid://8315677038"
+		killSound.Name = "Him death sound track"
+		killSound.Volume = 10
+		killSound.Looped = true
+
+		-- Hiệu ứng âm thanh
+		Instance.new("FlangeSoundEffect", killSound).Rate = 0.2
+		Instance.new("TremoloSoundEffect", killSound).Frequency = 1
+		Instance.new("PitchShiftSoundEffect", killSound).Octave = 1
+		Instance.new("DistortionSoundEffect", killSound).Level = 0.2
+
+		-- UI
+		local background = Instance.new("ImageLabel", screenGui)
+		background.Size = UDim2.new(1, 0, 1, 0)
+		background.Image = "rbxassetid://1712510813"
+		background.ImageTransparency = 0.5
+		background.BackgroundColor3 = Color3.new(0, 0, 0)
+		background.BackgroundTransparency = 0
+
+		local face = Instance.new("ImageLabel", screenGui)
+		face.AnchorPoint = Vector2.new(0.5, 0.5)
+		face.Position = UDim2.new(0.5, 0, 0.589, 0)
+		face.Size = UDim2.new(0, 1, 0, 1)
+		face.Image = "rbxassetid://12078778205"
+		face.BackgroundTransparency = 1
+
+		local text = Instance.new("ImageLabel", screenGui)
+		text.AnchorPoint = Vector2.new(0.5, 0.5)
+		text.Position = UDim2.new(0.5, 0, 0.5, 0)
+		text.Size = UDim2.new(0, 150, 0, 150)
+		text.Image = "rbxassetid://99132041298170"
+		text.BackgroundTransparency = 1
+
+		killSound:Play()
+
+		-- Camera zoom
+		local startFov = camera.FieldOfView
+		local zoomFov = 60
+		local zoomDuration = 1.1
+
+		camera.CameraType = Enum.CameraType.Scriptable
+		game:GetService("TweenService"):Create(camera, TweenInfo.new(zoomDuration), {FieldOfView = zoomFov}):Play()
+
+		game:GetService("TweenService"):Create(face, TweenInfo.new(zoomDuration), {
+			Size = UDim2.new(0, 1200, 0, 1200),
+			Position = UDim2.new(0.5, 0, 0.5, 0)
+		}):Play()
+
+		-- Jumpscare Effects
+		task.spawn(function()
+			while not stopEffects do
+				background.ImageTransparency = 0.3
+				background.BackgroundTransparency = 0
+				task.wait(0.1)
+				background.ImageTransparency = 0
+				background.BackgroundTransparency = 0.3
+				task.wait(0.1)
+			end
+		end)
+
+		task.spawn(function()
+			while not stopEffects do
+				background.Image = "rbxassetid://131073231978514"
+				task.wait(0.0589)
+				background.Image = "rbxassetid://105841646930424"
+				task.wait(0.0589)
+			end
+		end)
+
+		task.spawn(function()
+			while not stopEffects do
+				face.Rotation = 10
+				face.Image = "rbxassetid://12078778205"
+				task.wait(0)
+				face.Rotation = -10
+				task.wait(0)
+			end
+		end)
+
+		task.spawn(function()
+			while not stopEffects do
+				text.Image = "rbxassetid://88490592395124"
+				task.wait(0.0589)
+				text.Image = "rbxassetid://99132041298170"
+				task.wait(0.0589)
+			end
+		end)
+
+		task.spawn(function()
+			while not stopEffects do
+				text.Position = UDim2.new(math.random(), 0, math.random(), 0)
+				task.wait(0.05)
+			end
+		end)
+
+		task.spawn(function()
+			while not stopEffects do
+				text.ImageTransparency = 0
+				task.wait(0.1)
+				text.ImageTransparency = 1
+				task.wait(0.1)
+			end
+		end)
+
+		-- Đợi và fade out
+		task.wait(zoomDuration)
+		stopEffects = true
+		killSound:Stop()
+
+		task.spawn(function()
+			while not doneFading do
+				face.ImageTransparency = math.min(face.ImageTransparency + 0.1, 1)
+				text.ImageTransparency = math.min(text.ImageTransparency + 0.1, 1)
+				background.ImageTransparency = math.min(background.ImageTransparency + 0.1, 1)
+				background.BackgroundTransparency = math.min(background.BackgroundTransparency + 0.1, 1)
+				if face.ImageTransparency >= 1 then
+					doneFading = true
+				end
+				task.wait(0.05)
+			end
+			screenGui:Destroy()
+		end)
+
+		task.wait(0.4)
+		camera.CameraType = Enum.CameraType.Custom
+		camera.FieldOfView = startFov
+	else
+		print("Entity has damaged the player")
+	end
+end)
+
+--[[
+
+DEVELOPER NOTE:
+By overwriting 'CrucifixionOverwrite' the default crucifixion callback will be replaced with your custom callback.
+
+entity:SetCallback("CrucifixionOverwrite", function()
+    print("Custom crucifixion callback")
+end)
+
+]]--
+
+---====== Run entity ======---
+
+entity:Run()
