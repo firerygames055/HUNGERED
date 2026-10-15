@@ -361,7 +361,7 @@ entity:SetCallback("OnDamagePlayer", function(newHealth)
 		killSound.Parent = workspace
 		killSound.PlaybackSpeed = 1
 		killSound.SoundId = "rbxassetid://8315677038"
-		killSound.Name = "Him death sound track"
+		killSound.Name = "Him death sound chat"
 		killSound.Volume = 10
 		killSound.Looped = true
 
