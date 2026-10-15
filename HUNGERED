@@ -505,3 +505,14 @@ end)
 ---====== Run entity ======---
 
 entity:Run()
+
+---====== Load achievement giver ======---
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Doors/Custom%20Achievements/Source.lua"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "HUNGERED",
+    Desc = "He is hungry",
+    Reason = "encounter hungered",
+    Image = "rbxassetid://112635542001653"
+})
